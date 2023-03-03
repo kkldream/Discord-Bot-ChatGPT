@@ -1,7 +1,7 @@
 const {REST, Routes} = require("discord.js");
 
 const commands = [
-    {name: 'ping', description: 'Replies with Pong!'},
+    {name: 'ai', description: '向ChatGPT開新的話題'},
 ];
 
 async function applicationCommands() {
