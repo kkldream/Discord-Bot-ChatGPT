@@ -1,0 +1,15 @@
+{
+  "name": "discord-bot-chatgpt",
+  "version": "0.0.1",
+  "main": "index.js",
+  "author": "kkldream <kk69347321@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.7.1",
+    "dotenv": "^16.0.3"
+  }
+}
