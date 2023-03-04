@@ -64,6 +64,7 @@ client.on(Events.MessageCreate, async message => {
 
 function isDevGuild(guild) {
     if (process.env.NODE_ENV === "production") return false;
+    else if (!process.env.DISCORD_DEV_GUILD_ID) return false;
     else if (guild.id === process.env.DISCORD_DEV_GUILD_ID) return false;
     else return true;
 }
