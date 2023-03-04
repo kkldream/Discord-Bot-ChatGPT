@@ -16,7 +16,7 @@ const client = new Client({
 
 // 監聽指令訊息
 client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isChatInputCommand()) return;
+    if (isDevGuild(interaction.guild) ||!interaction.isChatInputCommand()) return;
     switch (interaction.commandName) {
         case "ai":
             await interaction.reply("[我是你的AI助理，請使用回覆來接續對話]");
@@ -26,8 +26,9 @@ client.on(Events.InteractionCreate, async interaction => {
 
 // 監聽一般訊息
 client.on(Events.MessageCreate, async message => {
-    if (message.author.id === process.env.DISCORD_BOT_CLIENT_ID
-        || !message.reference) return;
+    if (isDevGuild(message.guild) ||
+        message.author.id === process.env.DISCORD_BOT_CLIENT_ID ||
+        !message.reference) return;
     let messages = [];
     let reference = message.reference;
     let referenceTimestamp = message.createdTimestamp;
@@ -60,6 +61,12 @@ client.on(Events.MessageCreate, async message => {
         await replyMessage.edit(`[請求失敗，錯誤訊息如下]\n${error.message}`);
     }
 });
+
+function isDevGuild(guild) {
+    if (process.env.NODE_ENV === "production") return false;
+    else if (guild.id === process.env.DISCORD_DEV_GUILD_ID) return false;
+    else return true;
+}
 
 client.login(process.env.DISCORD_BOT_TOKEN).then(() => {
     console.log(`Logged in as ${client.user.tag}!`);
