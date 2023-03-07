@@ -1,74 +1,184 @@
 require("dotenv").config();
-const {Client, GatewayIntentBits, Events} = require('discord.js');
+const {Client, GatewayIntentBits, Events, ChannelType} = require('discord.js');
+const MongodbClient = require("./db");
 const openai = require("./openaiApi");
 const {applicationCommands} = require("./commands");
+const {dmChannelModeEnum, chatGptSystemMessage} = require("./constant");
 
-// 伺服器設定指令
-applicationCommands().then(res => console.log(res));
-
-const client = new Client({
+const dbClient = new MongodbClient(process.env.MONGODB_URL);
+const botClient = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.DirectMessageTyping,
     ]
 });
 
 // 監聽指令訊息
-client.on(Events.InteractionCreate, async interaction => {
-    if (isDevGuild(interaction.guild) ||!interaction.isChatInputCommand()) return;
-    switch (interaction.commandName) {
-        case "ai":
-            await interaction.reply("[我是你的AI助理，請使用回覆來接續對話]");
+botClient.on(Events.InteractionCreate, async msg => {
+    if (!msg.isChatInputCommand() || msg.user.bot || msg.user.system) return;
+    if (!msg.channel) await (await getUserById(msg.user.id)).createDM();
+    switch (msg.channel.type) {
+        case ChannelType.GuildText:
+            switch (msg.commandName) {
+                case "ai":
+                    await msg.reply("[我是共用的AI助理，請使用回覆來接續對話]");
+                    break;
+            }
+            break;
+        case ChannelType.DM:
+            switch (msg.commandName) {
+                case "ai":
+                    const requestTime = new Date(msg.createdTimestamp);
+                    await msg.reply("[已初始化對話串內容，請使用回覆來接續對話]");
+                    let userDoc = await dbClient.userCol.findOne({userId: msg.user.id});
+                    await dbClient.userCol.updateOne({userId: msg.user.id}, {
+                        $set: {
+                            createTime: userDoc?.createTime ?? requestTime,
+                            updateTime: requestTime,
+                            userId: msg.user.id,
+                            username: msg.user.username,
+                            userIndex: msg.user.discriminator
+                        }
+                    }, {upsert: true});
+                    await dbClient.dmChannelCol.updateMany(
+                        {userId: msg.user.id, mode: {$ne: dmChannelModeEnum.finish}},
+                        {
+                            $set: {
+                                updateTime: requestTime,
+                                mode: dmChannelModeEnum.finish
+                            }
+                        });
+                    await dbClient.dmChannelCol.insertOne({
+                        createTime: requestTime,
+                        updateTime: requestTime,
+                        userId: msg.user.id,
+                        mode: dmChannelModeEnum.init,
+                        messages: [{role: "system", content: chatGptSystemMessage}],
+                        usageToken: 0
+                    });
+                    break;
+            }
             break;
     }
 });
 
 // 監聽一般訊息
-client.on(Events.MessageCreate, async message => {
-    if (isDevGuild(message.guild) ||
-        message.author.id === process.env.DISCORD_BOT_CLIENT_ID ||
-        !message.reference) return;
-    let messages = [];
-    let reference = message.reference;
-    let referenceTimestamp = message.createdTimestamp;
+botClient.on(Events.MessageCreate, async msg => {
+    if (msg.author.id === botClient.user.id) return;
+    switch (msg.channel.type) {
+        case ChannelType.GuildText:
+            if (!msg.reference) return;
+            await actionGuildTextChannel(msg);
+            break;
+        case ChannelType.DM:
+            await actionDmTextChannel(msg);
+            break;
+    }
+});
+
+async function actionGuildTextChannel(msg) {
+    let chatMsgList = [];
+    let reference = msg.reference;
+    let referenceTimestamp = msg.createdTimestamp;
     let replyMessage;
     while (reference) {
-        let replyMsg = await message.channel.messages.fetch(reference.messageId);
-        if (messages.length === 0) {
-            if (replyMsg.author.id !== process.env.DISCORD_BOT_CLIENT_ID) return;
-            else replyMessage = await message.reply("[思考回應中...]");
+        let replyMsg = await msg.channel.messages.fetch(reference.messageId);
+        if (chatMsgList.length === 0) {
+            if (replyMsg.author.id !== botClient.user.id) return;
+            else replyMessage = await msg.reply("[思考回應中...]");
         }
-        messages.unshift({
-            role: replyMsg.author.id === process.env.DISCORD_BOT_CLIENT_ID ? "assistant" : "user",
-            content: replyMsg.author.id === process.env.DISCORD_BOT_CLIENT_ID ? replyMsg.content.slice((replyMsg.content.indexOf("\n") + 2)) : replyMsg.content
+        chatMsgList.unshift({
+            role: replyMsg.author.id === botClient.user.id ? "assistant" : "user",
+            content: replyMsg.author.id === botClient.user.id ? replyMsg.content.slice((replyMsg.content.indexOf("\n") + 2)) : replyMsg.content
         });
         reference = replyMsg.reference;
         referenceTimestamp = replyMsg.createdTimestamp;
     }
-    messages.shift();
-    messages.unshift({"role": "system", "content": "你是一位助理，預設回答使用繁體中文"});
-    messages.push({"role": "user", content: message.content});
+    chatMsgList.shift();
+    chatMsgList.unshift({role: "system", content: chatGptSystemMessage});
+    chatMsgList.push({role: "user", content: msg.content});
     try {
-        let response = await openai.chat(messages);
-        console.log(messages);
+        let response = await openai.chat(chatMsgList);
+        console.log(chatMsgList);
         let cost = Math.round(response.usage.total_tokens / 1000 * 0.002 * 10000) / 10000;
         await replyMessage.edit(`[此次請求的Token使用量為${response.usage.total_tokens}/4096 `
             + `(${Math.round(response.usage.total_tokens / 4096 * 100)}%)，預估花費${cost}美元 (${cost * 30}台幣)]\n\n`
             + response.message.content)
-    } catch (error) {
-        console.error(error);
-        await replyMessage.edit(`[請求失敗，錯誤訊息如下]\n${error.message}`);
+    } catch (e) {
+        console.error(e);
+        await replyMessage.edit(`[請求失敗，錯誤訊息如下]\n${e.message}`);
     }
-});
-
-function isDevGuild(guild) {
-    if (process.env.NODE_ENV === "production") return false;
-    else if (!process.env.DISCORD_DEV_GUILD_ID) return false;
-    else if (guild.id === process.env.DISCORD_DEV_GUILD_ID) return false;
-    else return true;
 }
 
-client.login(process.env.DISCORD_BOT_TOKEN).then(() => {
-    console.log(`Logged in as ${client.user.tag}!`);
-});
+async function actionDmTextChannel(msg) {
+    const requestTime = new Date(msg.createdTimestamp);
+    const sendMsg = await msg.author.send("[思考回應中...]");
+    const dmChannelDoc = await dbClient.dmChannelCol.findOne({
+        userId: msg.author.id,
+        mode: {$ne: dmChannelModeEnum.finish}
+    });
+    if (!dmChannelDoc) {
+        await sendMsg.edit("[發生錯誤，請輸入指令`/ai`來初始化對話串]")
+        return;
+    }
+    const chatMsgList = [
+        ...dmChannelDoc.messages,
+        {role: "user", content: msg.content}
+    ];
+    let response;
+    try {
+        response = await openai.chat(chatMsgList);
+    } catch (e) {
+        console.error(e);
+        await sendMsg.edit(`[發生錯誤，請輸入指令\`/ai\`來初始化對話串，錯誤訊息如下]\n${e.message}`);
+        return;
+    }
+    await dbClient.dmChannelCol.updateOne({_id: dmChannelDoc._id}, {
+        $set: {
+            createTime: dmChannelDoc?.createTime ?? requestTime,
+            updateTime: requestTime,
+            userId: msg.author.id,
+            mode: dmChannelModeEnum.running,
+            messages: [
+                ...chatMsgList,
+                {role: "assistant", content: response.message.content}
+            ],
+            usageToken: response.usage.total_tokens
+        }
+    }, {upsert: true});
+    const cost = Math.round(response.usage.total_tokens / 1000 * 0.002 * 10000) / 10000;
+    await sendMsg.edit(`[此次請求的Token使用量為${response.usage.total_tokens}/4096 `
+        + `(${Math.round(response.usage.total_tokens / 4096 * 100)}%)，預估花費${cost}美元 (${cost * 30}台幣)]\n\n`
+        + response.message.content)
+}
+
+(async () => {
+    // 伺服器設定指令
+    await applicationCommands();
+    console.log("Successfully reloaded application (/) commands.");
+    // DB連線
+    try {
+        await dbClient.connect();
+        console.log("資料庫連線成功");
+    } catch (e) {
+        throw new Error("資料庫連線失敗");
+    }
+    // Bot連線
+    await botClient.login(process.env.DISCORD_BOT_TOKEN);
+    console.log(`Logged in as ${botClient.user.tag}!`);
+    let userDocList = await dbClient.userCol.find({}).toArray();
+    userDocList.map(userDoc => {
+        getUserById(userDoc.userId).then(async user => {
+            await user.createDM();
+            console.log(`已建立 ${userDoc.username}#${userDoc.userIndex} 的文字頻道`);
+        });
+    })
+
+})()
+
+async function getUserById(userId) {
+    return await botClient.users.fetch(userId);
+}
