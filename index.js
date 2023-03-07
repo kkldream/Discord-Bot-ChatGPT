@@ -3,7 +3,8 @@ const {Client, GatewayIntentBits, Events, ChannelType} = require('discord.js');
 const MongodbClient = require("./db");
 const openai = require("./openaiApi");
 const {applicationCommands} = require("./commands");
-const {dmChannelModeEnum, chatGptSystemMessage} = require("./constant");
+const {dmChannelMode} = require("./constant");
+const stringValue = require("./stringValue");
 
 const dbClient = new MongodbClient(process.env.MONGODB_URL);
 const botClient = new Client({
@@ -44,19 +45,19 @@ botClient.on(Events.InteractionCreate, async msg => {
                         }
                     }, {upsert: true});
                     await dbClient.dmChannelCol.updateMany(
-                        {userId: msg.user.id, mode: {$ne: dmChannelModeEnum.finish}},
+                        {userId: msg.user.id, mode: {$ne: dmChannelMode.finish}},
                         {
                             $set: {
                                 updateTime: requestTime,
-                                mode: dmChannelModeEnum.finish
+                                mode: dmChannelMode.finish
                             }
                         });
                     await dbClient.dmChannelCol.insertOne({
                         createTime: requestTime,
                         updateTime: requestTime,
                         userId: msg.user.id,
-                        mode: dmChannelModeEnum.init,
-                        messages: [{role: "system", content: chatGptSystemMessage}],
+                        mode: dmChannelMode.init,
+                        messages: [{role: openai.msgRole.system, content: stringValue.chatGptSystemMessage}],
                         usageToken: 0
                     });
                     break;
@@ -91,18 +92,17 @@ async function actionGuildTextChannel(msg) {
             else replyMessage = await msg.reply("[思考回應中...]");
         }
         chatMsgList.unshift({
-            role: replyMsg.author.id === botClient.user.id ? "assistant" : "user",
+            role: replyMsg.author.id === botClient.user.id ? openai.msgRole.assistant : openai.msgRole.user,
             content: replyMsg.author.id === botClient.user.id ? replyMsg.content.slice((replyMsg.content.indexOf("\n") + 2)) : replyMsg.content
         });
         reference = replyMsg.reference;
         referenceTimestamp = replyMsg.createdTimestamp;
     }
     chatMsgList.shift();
-    chatMsgList.unshift({role: "system", content: chatGptSystemMessage});
+    chatMsgList.unshift({role: openai.msgRole.system, content: stringValue.chatGptSystemMessage});
     chatMsgList.push({role: "user", content: msg.content});
     try {
         let response = await openai.chat(chatMsgList);
-        console.log(chatMsgList);
         let cost = Math.round(response.usage.total_tokens / 1000 * 0.002 * 10000) / 10000;
         await replyMessage.edit(`[此次請求的Token使用量為${response.usage.total_tokens}/4096 `
             + `(${Math.round(response.usage.total_tokens / 4096 * 100)}%)，預估花費${cost}美元 (${cost * 30}台幣)]\n\n`
@@ -118,7 +118,7 @@ async function actionDmTextChannel(msg) {
     const sendMsg = await msg.author.send("[思考回應中...]");
     const dmChannelDoc = await dbClient.dmChannelCol.findOne({
         userId: msg.author.id,
-        mode: {$ne: dmChannelModeEnum.finish}
+        mode: {$ne: dmChannelMode.finish}
     });
     if (!dmChannelDoc) {
         await sendMsg.edit("[發生錯誤，請輸入指令`/ai`來初始化對話串]")
@@ -126,7 +126,7 @@ async function actionDmTextChannel(msg) {
     }
     const chatMsgList = [
         ...dmChannelDoc.messages,
-        {role: "user", content: msg.content}
+        {role: openai.msgRole.user, content: msg.content}
     ];
     let response;
     try {
@@ -141,10 +141,10 @@ async function actionDmTextChannel(msg) {
             createTime: dmChannelDoc?.createTime ?? requestTime,
             updateTime: requestTime,
             userId: msg.author.id,
-            mode: dmChannelModeEnum.running,
+            mode: dmChannelMode.running,
             messages: [
                 ...chatMsgList,
-                {role: "assistant", content: response.message.content}
+                {role: openai.msgRole.assistant, content: response.message.content}
             ],
             usageToken: response.usage.total_tokens
         }
@@ -158,7 +158,7 @@ async function actionDmTextChannel(msg) {
 (async () => {
     // 伺服器設定指令
     await applicationCommands();
-    console.log("Successfully reloaded application (/) commands.");
+    console.log("已建立\"/\"命令");
     // DB連線
     try {
         await dbClient.connect();

@@ -1,9 +1,16 @@
 require("dotenv").config();
 const {Configuration, OpenAIApi} = require("openai");
 
+const msgRole = Object.freeze({
+    system: "system",
+    user: "user",
+    assistant: "assistant",
+});
+
 const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
 });
+
 const openai = new OpenAIApi(configuration);
 
 async function chat(messages) {
@@ -23,4 +30,7 @@ async function chat(messages) {
     }
 }
 
-module.exports = {chat};
+module.exports = {
+    chat,
+    msgRole,
+};

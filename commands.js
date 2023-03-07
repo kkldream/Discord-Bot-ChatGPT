@@ -9,6 +9,8 @@ async function applicationCommands() {
     await rest.put(Routes.applicationCommands(process.env.DISCORD_BOT_CLIENT_ID), {body: commands});
 }
 
-module.exports = {applicationCommands};
+module.exports = {
+    applicationCommands,
+};
 
 
