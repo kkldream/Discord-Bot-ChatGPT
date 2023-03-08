@@ -33,7 +33,7 @@ botClient.on(Events.InteractionCreate, async msg => {
             switch (msg.commandName) {
                 case "ai":
                     const requestTime = new Date(msg.createdTimestamp);
-                    await msg.reply("[已初始化對話串內容，請使用回覆來接續對話]");
+                    await msg.reply("[已初始化對話串內容，請直接回覆來接續對話]");
                     let userDoc = await dbClient.userCol.findOne({userId: msg.user.id});
                     await dbClient.userCol.updateOne({userId: msg.user.id}, {
                         $set: {
