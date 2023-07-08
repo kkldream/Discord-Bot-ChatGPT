@@ -30,6 +30,24 @@ async function chat(messages) {
     }
 }
 
+async function image(messages) {
+    try {
+        const response = await openai.createImage({
+            prompt: messages,
+            n: 2,
+            size: "1024x1024",
+          });
+        return {
+            id: completion.data.id,
+            created: completion.data.created,
+            usage: completion.data.usage,
+            message: completion.data.choices[0].message
+        };
+    } catch (error) {
+        throw error.response.data.error;
+    }
+}
+
 module.exports = {
     chat,
     msgRole,
