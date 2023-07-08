@@ -21,17 +21,17 @@ const botClient = new Client({
 botClient.on(Events.InteractionCreate, async msg => {
     if (!msg.isChatInputCommand() || msg.user.bot || msg.user.system) return;
     if (!msg.channel) await (await getUserById(msg.user.id)).createDM();
-    switch (msg.channel.type) {
-        case ChannelType.GuildText:
-            switch (msg.commandName) {
-                case "ai":
+    switch (msg.commandName) {
+        case "image":
+            console.log(msg);
+            await msg.reply("reply iamge");
+            break;
+        case "ai":
+            switch (msg.channel.type) {
+                case ChannelType.GuildText:
                     await msg.reply("[我是共用的AI助理，請使用回覆來接續對話]");
                     break;
-            }
-            break;
-        case ChannelType.DM:
-            switch (msg.commandName) {
-                case "ai":
+                case ChannelType.DM:
                     const requestTime = new Date(msg.createdTimestamp);
                     await msg.reply("[已初始化對話串內容，請直接回覆來接續對話]");
                     let userDoc = await dbClient.userCol.findOne({userId: msg.user.id});
@@ -154,6 +154,7 @@ async function actionDmTextChannel(msg) {
         + `(${Math.round(response.usage.total_tokens / 4096 * 100)}%)，預估花費${cost}美元 (${cost * 30}台幣)]\n\n`
         + response.message.content)
 }
+
 
 (async () => {
     // 伺服器設定指令

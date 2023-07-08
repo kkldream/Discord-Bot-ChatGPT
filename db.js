@@ -1,7 +1,7 @@
 const {MongoClient} = require("mongodb");
 
 class MongodbClient {
-    static DB_NAME = "dcbot_chatgpt";
+    static DB_NAME = "dcbot_chatgpt-dev";
     #client;
     tempCol;
     userCol;
