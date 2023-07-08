@@ -34,6 +34,7 @@ NODE_ENV="production"
 OPENAI_API_KEY="..."
 DISCORD_BOT_TOKEN="..."
 DISCORD_BOT_CLIENT_ID="..."
+MONGODB_DB_NAME="dcbot_chatgpt"
 MONGODB_URL="mongodb://..."
 ```
 

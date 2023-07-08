@@ -1,19 +1,20 @@
 const {MongoClient} = require("mongodb");
 
 class MongodbClient {
-    static DB_NAME = "dcbot_chatgpt-dev";
     #client;
+    dbName;
     tempCol;
     userCol;
     dmChannelCol;
 
-    constructor(url) {
+    constructor(url, dbName) {
         this.#client = new MongoClient(url);
+        this.dbName = dbName;
     }
 
     async connect() {
         this.#client = await this.#client.connect();
-        const db = this.#client.db(MongodbClient.DB_NAME);
+        const db = this.#client.db(this.dbName);
         this.tempCol = db.collection('temp');
         this.userCol = db.collection('user');
         this.dmChannelCol = db.collection('dmChannel');
