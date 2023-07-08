@@ -6,7 +6,7 @@ const {applicationCommands} = require("./commands");
 const {dmChannelMode} = require("./constant");
 const stringValue = require("./stringValue");
 
-const dbClient = new MongodbClient(process.env.MONGODB_URL);
+const dbClient = new MongodbClient(process.env.MONGODB_URL, process.env.MONGODB_DB_NAME);
 const botClient = new Client({
     intents: [
         GatewayIntentBits.Guilds,
