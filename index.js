@@ -25,7 +25,7 @@ botClient.on(Events.InteractionCreate, async msg => {
         case ChannelType.GuildText:
             switch (msg.commandName) {
                 case "ai":
-                    await msg.reply("[我是共用的AI助理，請使用回覆來接續對話]");
+                    await msg.reply("[我是共用的智能習萌寵，請使用回覆來接續對話]");
                     break;
             }
             break;
@@ -89,7 +89,7 @@ async function actionGuildTextChannel(msg) {
         let replyMsg = await msg.channel.messages.fetch(reference.messageId);
         if (chatMsgList.length === 0) {
             if (replyMsg.author.id !== botClient.user.id) return;
-            else replyMessage = await msg.reply("[思考回應中...]");
+            else replyMessage = await msg.reply("[本萌寵思考回應中...]");
         }
         chatMsgList.unshift({
             role: replyMsg.author.id === botClient.user.id ? openai.msgRole.assistant : openai.msgRole.user,
@@ -104,7 +104,7 @@ async function actionGuildTextChannel(msg) {
     try {
         let response = await openai.chat(chatMsgList);
         let cost = Math.round(response.usage.total_tokens / 1000 * 0.002 * 10000) / 10000;
-        await replyMessage.edit(`[此次請求的Token使用量為${response.usage.total_tokens}/8192 `
+        await replyMessage.edit(`[此次主人請求的Token使用量為${response.usage.total_tokens}/8192 `
             + `(${Math.round(response.usage.total_tokens / 8192 * 100)}%)，預估花費${cost}美元 (${cost * 30}台幣)]\n\n`
             + response.message.content)
     } catch (e) {
@@ -115,7 +115,7 @@ async function actionGuildTextChannel(msg) {
 
 async function actionDmTextChannel(msg) {
     const requestTime = new Date(msg.createdTimestamp);
-    const sendMsg = await msg.author.send("[思考回應中...]");
+    const sendMsg = await msg.author.send("[本萌寵思考回應中...]");
     const dmChannelDoc = await dbClient.dmChannelCol.findOne({
         userId: msg.author.id,
         mode: {$ne: dmChannelMode.finish}
@@ -150,7 +150,7 @@ async function actionDmTextChannel(msg) {
         }
     }, {upsert: true});
     const cost = Math.round(response.usage.total_tokens / 1000 * 0.002 * 10000) / 10000;
-    await sendMsg.edit(`[此次請求的Token使用量為${response.usage.total_tokens}/8192 `
+    await sendMsg.edit(`[此次主人請求的Token使用量為${response.usage.total_tokens}/8192 `
         + `(${Math.round(response.usage.total_tokens / 8192 * 100)}%)，預估花費${cost}美元 (${cost * 30}台幣)]\n\n`
         + response.message.content)
 }
