@@ -19,11 +19,14 @@ async function chat(messages) {
             model: "gpt-3.5-turbo-1106",
             messages,
         });
+        const inputCost = completion.data.usage.prompt_tokens / 1000 * 0.001;
+        const outputCost = completion.data.usage.completion_tokens / 1000 * 0.002;
+        const totalCost = inputCost + outputCost;
         return {
             id: completion.data.id,
-            created: completion.data.created,
-            usage: completion.data.usage,
-            message: completion.data.choices[0].message
+            token: completion.data.usage.total_tokens,
+            cost: totalCost,
+            message: completion.data.choices[0].message.content,
         };
     } catch (error) {
         throw error.response.data.error;

@@ -103,13 +103,7 @@ async function actionGuildTextChannel(msg) {
     chatMsgList.push({role: "user", content: msg.content});
     try {
         let response = await openai.chat(chatMsgList);
-        console.log(response);
-        const inputCost = response.usage.prompt_tokens / 1000 * 0.001;
-        const outputCost = response.usage.completion_tokens / 1000 * 0.002;
-        const cost = (inputCost + outputCost).toFixed(4);
-        await replyMessage.edit(`[此次主人請求的Token使用量為${response.usage.total_tokens}/16385 `
-            + `(${Math.round(response.usage.total_tokens / 16385 * 100)}%)，預估花費${cost}美元 (${((inputCost + outputCost) * 31).toFixed(4)}台幣)]\n\n`
-            + response.message.content)
+        await replyMessage.edit(getDiscordMsgHeader(response.token, response.cost, response.message));
     } catch (e) {
         console.error(e);
         await replyMessage.edit(`[請求失敗，錯誤訊息如下]\n${e.message}`);
@@ -147,17 +141,12 @@ async function actionDmTextChannel(msg) {
             mode: dmChannelMode.running,
             messages: [
                 ...chatMsgList,
-                {role: openai.msgRole.assistant, content: response.message.content}
+                {role: openai.msgRole.assistant, content: response.message}
             ],
-            usageToken: response.usage.total_tokens
+            usageToken: response.token
         }
     }, {upsert: true});
-    const inputCost = response.usage.prompt_tokens / 1000 * 0.001;
-    const outputCost = response.usage.completion_tokens / 1000 * 0.002;
-    const cost = (inputCost + outputCost).toFixed(4);
-    await sendMsg.edit(`[此次主人請求的Token使用量為${response.usage.total_tokens}/16385 `
-        + `(${Math.round(response.usage.total_tokens / 16385 * 100)}%)，預估花費${cost}美元 (${((inputCost + outputCost) * 31).toFixed(4)}台幣)]\n\n`
-        + response.message.content)
+    await replyMessage.edit(getDiscordMsgHeader(response.token, response.cost, response.message));
 }
 
 (async () => {
@@ -186,4 +175,11 @@ async function actionDmTextChannel(msg) {
 
 async function getUserById(userId) {
     return await botClient.users.fetch(userId);
+}
+
+function getDiscordMsgHeader(token, cost, content) {
+    return `[此次主人請求的Token使用量為${token}/16385 `
+        + `(${Math.round(token / 16385 * 100)}%)，`
+        + `預估花費${cost.toFixed(4)}美元 (${(cost * 31).toFixed(4)}台幣)]\n\n`
+        + content
 }
