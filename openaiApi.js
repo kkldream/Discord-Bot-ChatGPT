@@ -16,7 +16,7 @@ const openai = new OpenAIApi(configuration);
 async function chat(messages) {
     try {
         const completion = await openai.createChatCompletion({
-            model: "gpt-4",
+            model: "gpt-3.5-turbo-1106",
             messages,
         });
         return {
