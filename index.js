@@ -104,11 +104,11 @@ async function actionGuildTextChannel(msg) {
     try {
         let response = await openai.chat(chatMsgList);
         console.log(response);
-        const inputCost = Math.round(response.usage.prompt_tokens / 1000 * 0.001 * 10000) / 10000;
-        const outputCost = Math.round(response.usage.completion_tokens / 1000 * 0.002 * 10000) / 10000;
-        const cost = inputCost + outputCost;
+        const inputCost = response.usage.prompt_tokens / 1000 * 0.001;
+        const outputCost = response.usage.completion_tokens / 1000 * 0.002;
+        const cost = (inputCost + outputCost).toFixed(4);
         await replyMessage.edit(`[此次主人請求的Token使用量為${response.usage.total_tokens}/16385 `
-            + `(${Math.round(response.usage.total_tokens / 16385 * 100)}%)，預估花費${cost}美元 (${cost * 31}台幣)]\n\n`
+            + `(${Math.round(response.usage.total_tokens / 16385 * 100)}%)，預估花費${cost}美元 (${((inputCost + outputCost) * 31).toFixed(4)}台幣)]\n\n`
             + response.message.content)
     } catch (e) {
         console.error(e);
@@ -152,11 +152,11 @@ async function actionDmTextChannel(msg) {
             usageToken: response.usage.total_tokens
         }
     }, {upsert: true});
-    const inputCost = Math.round(response.usage.prompt_tokens / 1000 * 0.001 * 10000) / 10000;
-    const outputCost = Math.round(response.usage.completion_tokens / 1000 * 0.002 * 10000) / 10000;
-    const cost = inputCost + outputCost;
+    const inputCost = response.usage.prompt_tokens / 1000 * 0.001;
+    const outputCost = response.usage.completion_tokens / 1000 * 0.002;
+    const cost = (inputCost + outputCost).toFixed(4);
     await sendMsg.edit(`[此次主人請求的Token使用量為${response.usage.total_tokens}/16385 `
-        + `(${Math.round(response.usage.total_tokens / 16385 * 100)}%)，預估花費${cost}美元 (${cost * 31}台幣)]\n\n`
+        + `(${Math.round(response.usage.total_tokens / 16385 * 100)}%)，預估花費${cost}美元 (${((inputCost + outputCost) * 31).toFixed(4)}台幣)]\n\n`
         + response.message.content)
 }
 
