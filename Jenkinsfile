@@ -19,7 +19,7 @@ docker build \\
           }
           steps {
             withCredentials(bindings: [
-                                          string(credentialsId: 'kk_mongodb_url', variable: 'MONGODB_URL'),
+                                          string(credentialsId: 'kk-mongodb_url', variable: 'MONGODB_URL'),
                                           string(credentialsId: 'kk-openai_api_key', variable: 'OPENAI_API_KEY'),
                                           string(credentialsId: 'dc_chatgpt-discord_bot_token', variable: 'DISCORD_BOT_TOKEN'),
                                           string(credentialsId: 'dc_chatgpt-discord_bot_client_id', variable: 'DISCORD_BOT_CLIENT_ID')
