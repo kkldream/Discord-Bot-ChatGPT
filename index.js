@@ -146,7 +146,7 @@ async function actionDmTextChannel(msg) {
             usageToken: response.token
         }
     }, {upsert: true});
-    await replyMessage.edit(getDiscordMsgHeader(response.token, response.cost, response.message));
+    await sendMsg.edit(getDiscordMsgHeader(response.token, response.cost, response.message));
 }
 
 (async () => {
