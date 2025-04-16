@@ -178,8 +178,9 @@ async function getUserById(userId) {
 }
 
 function getDiscordMsgHeader(token, cost, content) {
-    return `[此次主人請求的Token使用量為${token}/16385 `
-        + `(${Math.round(token / 16385 * 100)}%)，`
-        + `預估花費${cost.toFixed(4)}美元 (${(cost * 31).toFixed(4)}台幣)]\n\n`
-        + content
+    return content;
+    // return `[此次主人請求的Token使用量為${token}/16385 `
+    //     + `(${Math.round(token / 16385 * 100)}%)，`
+    //     + `預估花費${cost.toFixed(4)}美元 (${(cost * 31).toFixed(4)}台幣)]\n\n`
+    //     + content
 }
