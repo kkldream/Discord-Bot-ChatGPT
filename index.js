@@ -89,7 +89,7 @@ async function actionGuildTextChannel(msg) {
         let replyMsg = await msg.channel.messages.fetch(reference.messageId);
         if (chatMsgList.length === 0) {
             if (replyMsg.author.id !== botClient.user.id) return;
-            else replyMessage = await msg.reply("[本萌寵思考回應中...]");
+            else replyMessage = await msg.reply("[維尼思考回應中...]");
         }
         chatMsgList.unshift({
             role: replyMsg.author.id === botClient.user.id ? openai.msgRole.assistant : openai.msgRole.user,
@@ -112,7 +112,7 @@ async function actionGuildTextChannel(msg) {
 
 async function actionDmTextChannel(msg) {
     const requestTime = new Date(msg.createdTimestamp);
-    const sendMsg = await msg.author.send("[本萌寵思考回應中...]");
+    const sendMsg = await msg.author.send("[維尼思考回應中...]");
     const dmChannelDoc = await dbClient.dmChannelCol.findOne({
         userId: msg.author.id,
         mode: {$ne: dmChannelMode.finish}
