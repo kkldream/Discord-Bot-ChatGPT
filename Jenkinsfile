@@ -1,71 +1,34 @@
+// Verification-only. The owner must provision a dedicated, non-production agent.
+// Do not point this label at a production host or accept untrusted fork builds here.
 pipeline {
-  agent any
+  agent { label 'discord-bot-verify' }
+  options {
+    disableConcurrentBuilds()
+    timeout(time: 15, unit: 'MINUTES')
+  }
   stages {
-    stage('Build') {
+    stage('Verify runtime') {
       steps {
-        sh '''build_name=jenkins/${PROJECT_NAME}:${BRANCH_NAME}-${BUILD_NUMBER}
-
-docker build \\
-  -t ${build_name} \\
-  .'''
+        sh '''set -eu
+node -e 'if (process.versions.node !== "24.21.0") process.exit(1)'
+npm --version
+'''
       }
     }
-
-    stage('Deploy') {
-      parallel {
-        stage('main') {
-          when {
-            branch 'main'
-          }
-          steps {
-            withCredentials(bindings: [
-                                          string(credentialsId: 'kk-mongodb_url', variable: 'MONGODB_URL'),
-                                          string(credentialsId: 'kk-openai_api_key', variable: 'OPENAI_API_KEY'),
-                                          string(credentialsId: 'dc_chatgpt-discord_bot_token', variable: 'DISCORD_BOT_TOKEN'),
-                                          string(credentialsId: 'dc_chatgpt-discord_bot_client_id', variable: 'DISCORD_BOT_CLIENT_ID')
-                                        ]) {
-                sh '''run_name=jk-${PROJECT_NAME}-${BRANCH_NAME}
-build_name=jenkins/${PROJECT_NAME}:${BRANCH_NAME}-${BUILD_NUMBER}
-
-docker rm -f ${run_name}
-docker run \\
-  -d \\
-  --restart=unless-stopped \\
-  --name ${run_name} \\
-  -e NODE_ENV="production" \\
-  -e OPENAI_API_KEY=${OPENAI_API_KEY} \\
-  -e DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN} \\
-  -e DISCORD_BOT_CLIENT_ID=${DISCORD_BOT_CLIENT_ID} \\
-  -e MONGODB_URL=${MONGODB_URL} \\
-  ${build_name}'''
-              }
-
-            }
-          }
-
-        }
+    stage('Install') { steps { sh 'npm ci --ignore-scripts --no-audit' } }
+    stage('Verify') { steps { sh 'npm run verify' } }
+    stage('Dependency audit') { steps { sh 'npm audit --audit-level=high && npm run sbom' } }
+    stage('Candidate image') {
+      when { branch 'main' }
+      steps {
+        sh '''set -eu
+commit=$(git rev-parse --verify HEAD)
+case "$commit" in *[!0-9a-f]*|'') exit 1 ;; esac
+test "${#commit}" -eq 40
+docker build --pull -t "jenkins/dc_chatgpt:git-${commit}" .
+'''
       }
-
-      stage('Test') {
-        steps {
-          sh 'echo Not test yet!'
-        }
-      }
-
-    }
-    environment {
-      PROJECT_NAME = 'dc_chatgpt'
-    }
-    post {
-      success {
-        library 'shared-library'
-        discord_notifaction true
-      }
-
-      unsuccessful {
-        library 'shared-library'
-        discord_notifaction false
-      }
-
     }
   }
+  // No credentials, docker run/rm, production changes, or automatic cutover.
+}

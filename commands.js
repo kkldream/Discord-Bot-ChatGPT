@@ -1,16 +1,10 @@
-const {REST, Routes} = require("discord.js");
-
-const commands = [
-    {name: 'ai', description: '向ChatGPT開新的話題'},
-];
-
-async function applicationCommands() {
-    const rest = new REST({version: '10'}).setToken(process.env.DISCORD_BOT_TOKEN);
-    await rest.put(Routes.applicationCommands(process.env.DISCORD_BOT_CLIENT_ID), {body: commands});
+'use strict';
+const commands = Object.freeze([{ name: 'ai', description: '開啟新的對話；私訊內容會傳至 OpenAI 並儲存' }]);
+async function applicationCommands({ token, applicationId, guildId, rest }) {
+  const { REST, Routes } = require('discord.js');
+  rest ||= new REST({ version: '10', timeout: 10000, retries: 0 }).setToken(token);
+  const route = guildId ? Routes.applicationGuildCommands(applicationId, guildId) : Routes.applicationCommands(applicationId);
+  // Upsert only our named command. Never bulk overwrite unrelated global commands.
+  for (const command of commands) await rest.post(route, { body: command });
 }
-
-module.exports = {
-    applicationCommands,
-};
-
-
+module.exports = { commands, applicationCommands };

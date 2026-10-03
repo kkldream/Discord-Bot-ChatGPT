@@ -6,14 +6,30 @@
   "license": "MIT",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "node --watch index.js",
+    "check:config": "node index.js --check-config",
+    "register-commands": "node scripts/register-commands.js",
+    "lint": "eslint .",
+    "test": "node --require ./test/no-network.cjs --test test/*.test.js",
+    "test:coverage": "node --require ./test/no-network.cjs --experimental-test-coverage --test test/*.test.js",
+    "test:baseline": "node --test scripts/baseline-regressions.cjs",
+    "verify": "npm run lint && npm test",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "sbom": "node scripts/sbom.js"
   },
   "dependencies": {
-    "discord.js": "^14.7.1",
-    "dotenv": "^16.0.3",
-    "moment": "^2.29.4",
-    "mongodb": "^4.11.0",
-    "openai": "^3.2.1"
+    "discord.js": "14.27.0",
+    "dotenv": "18.0.5",
+    "mongodb": "7.7.0",
+    "openai": "7.27.0"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "npm@11.19.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.21.0 <25",
+    "npm": ">=11.19.0 <12"
+  },
+  "devDependencies": {
+    "eslint": "10.12.0"
+  }
 }
