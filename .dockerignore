@@ -1,0 +1,14 @@
+**
+!package.json
+!package-lock.json
+!.npmrc
+!index.js
+!db.js
+!commands.js
+!constant.js
+!stringValue.js
+!openaiApi.js
+!lib/
+!lib/*.js
+!scripts/
+!scripts/healthcheck.js
