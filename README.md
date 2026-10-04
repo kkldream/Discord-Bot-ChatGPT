@@ -1,6 +1,6 @@
 # Discord-Bot-ChatGPT
 
-Discord 文字聊天 bot，使用 OpenAI Chat Completions 與 MongoDB。支援伺服器文字頻道的回覆串及私訊對話。
+Discord 文字聊天 bot，支援 OpenAI Chat Completions／Google Gemini，搭配 MongoDB。支援伺服器文字頻道的回覆串及私訊對話。
 
 > 本分支是 issue #1 的程式與離線驗證基線，不代表已完成正式環境驗收。只支援**單一 bot 程序／一個 replica**；既有資料遷移、隱私政策、憑證處理、模型替換及正式部署仍需擁有者決定。詳見 [處理狀態](docs/issue-1-status.md)。
 >
@@ -48,7 +48,9 @@ npm run sbom
 
 ## 設定
 
-將 `.env.example` 複製成 `.env`，填入自己的 OpenAI key、Discord token、MongoDB URI 與**明確的資料庫名稱**。範例不包含帳號密碼；不得把 `.env`、備份、log 或正式對話提交至 Git。
+預設 `AI_PROVIDER=openai`；切換 `AI_PROVIDER=gemini` 時改用 `GEMINI_API_KEY` 與明示的 `GEMINI_MODEL`。環境設定、資料相容性與驗證邊界見 [Gemini provider](docs/gemini-provider.md)。
+
+將 `.env.example` 複製成 `.env`，填入所選供應商的 API key、Discord token、MongoDB URI 與**明確的資料庫名稱**。範例不包含帳號密碼；不得把 `.env`、備份、log 或正式對話提交至 Git。
 
 至少設定 `ALLOWED_USER_IDS` 或 `ALLOWED_GUILD_IDS`。ID 以逗號分隔；不填白名單且 `ALLOW_PUBLIC_ACCESS=false` 時，設定驗證會拒絕啟動，不會默認開放所有人。
 
@@ -100,7 +102,7 @@ npm start
 
 ## 資料與隱私限制
 
-`user` 儲存使用者識別資料；`dmChannel` 儲存完整 DM 內容與用量；`temp` 儲存本版新增的頻道 bot 回覆全文、message/channel ID。Discord 訊息／附件也留在 Discord。提問與選入的歷史會傳至 OpenAI；`store:false` 不是所有服務與備份零保留的保證。
+`user` 儲存使用者識別資料；`dmChannel` 儲存完整 DM 內容與用量；`temp` 儲存本版新增的頻道 bot 回覆全文、message/channel ID。Discord 訊息／附件也留在 Discord。提問與選入的歷史會傳至所選供應商（OpenAI 或 Google Gemini）；`store:false` 不是所有服務與備份零保留的保證。
 
 **目前沒有本機資料 TTL、使用者自助刪除或匯出，也未實作完整同意流程。** `/ai` 的告知不是已完成隱私治理的證明。保留期限、通知／同意、備份刪除與存取權限須由擁有者先決定；在完成前，不應當成公開多使用者產品上線。不要輸入敏感資訊。
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — Gemini provider
+
+- Add opt-in Gemini text provider, canonical history conversion, safe responses and provider-specific privacy notices.
+- Preserve OpenAI default, existing offline tests, bounded resources and npm/CommonJS runtime; no new dependencies.
+- Add worktree/index secret checks and backup/env ignore rules.
+- No legacy dev merge, database migration, secret rotation or deployment.
+
 ## Unreleased — issue #1 offline baseline
 
 - 修正頻道續聊正文截斷、DM 冷快取、事件層錯誤邊界、SDK 傳輸錯誤及長輸出處理。
