@@ -1,5 +1,5 @@
 'use strict';
-const commands = Object.freeze([{ name: 'ai', description: '開啟新的對話；私訊內容會傳至 OpenAI 並儲存' }]);
+const commands = Object.freeze([{ name: 'ai', description: '開啟新的對話；私訊內容會傳至設定的模型供應商並儲存' }]);
 async function applicationCommands({ token, applicationId, guildId, rest }) {
   const { REST, Routes } = require('discord.js');
   rest ||= new REST({ version: '10', timeout: 10000, retries: 0 }).setToken(token);

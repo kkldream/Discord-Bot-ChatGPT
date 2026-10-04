@@ -30,7 +30,7 @@ function createChatProvider(config, { client, fetch } = {}) {
         if (typeof content !== 'string' || !content.trim()) throw new AppError('EMPTY_OUTPUT');
         if (Buffer.byteLength(content, 'utf8') > config.maxOutputBytes) throw new AppError('OUTPUT_LIMIT');
         const model = completion.model || config.model;
-        return { id: completion.id, model, message: content, token: completion.usage?.total_tokens ?? null,
+        return { id: completion.id, provider: 'openai', model, message: content, token: completion.usage?.total_tokens ?? null,
           cost: estimateCost(model, completion.usage), usage: completion.usage ?? null,
           estimate: { currency: 'USD', rateDate: '2026-10-04', isBillingRecord: false } };
       } catch (error) {

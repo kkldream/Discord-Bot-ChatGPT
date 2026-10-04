@@ -132,3 +132,11 @@ dist
 .artifacts/
 .env.*
 !.env.example
+
+# Private drafts, editor backups and credentials
+*.backup
+*.bak
+*.orig
+*.rej
+*.key
+*.pem
