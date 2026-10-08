@@ -9,6 +9,11 @@
 !stringValue.js
 !openaiApi.js
 !lib/
+lib/**
 !lib/*.js
+!lib/providers/
+lib/providers/**
+!lib/providers/*.js
 !scripts/
+scripts/**
 !scripts/healthcheck.js
