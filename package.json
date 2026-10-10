@@ -13,6 +13,7 @@
     "test": "node --require ./test/no-network.cjs --test test/*.test.js",
     "test:coverage": "node --require ./test/no-network.cjs --experimental-test-coverage --test test/*.test.js",
     "test:baseline": "node --test scripts/baseline-regressions.cjs",
+    "test:integration": "bash scripts/test-integration.sh",
     "verify": "npm run lint && npm run check:secrets && npm test",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
     "sbom": "node scripts/sbom.js",

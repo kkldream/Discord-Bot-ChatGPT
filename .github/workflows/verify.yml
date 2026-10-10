@@ -24,3 +24,15 @@ jobs:
       - run: npm run verify
       - run: npm audit --audit-level=high
       - run: npm run sbom
+  isolated-acceptance:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: 離線 cleanup 與真實 process timeout 安全回歸
+        run: python3 test/integration/cleanup.test.py
+      - name: 隔離 MongoDB 與實際 image 驗收（無正式秘密、無發布）
+        run: bash scripts/test-integration.sh
